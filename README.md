@@ -13,8 +13,6 @@
 git clone https://github.com/zakarouf/colorcodeconverter
 cd colorcodeconverter
 ./compile
-`
-`
 ./ccc -h
 `
 
