@@ -55,7 +55,7 @@ static int color_show_values(colrgb_t c, colhsv_t h)
     colorB_set(c.r, c.g, c.b);
     printf("          ");
     color_reset();
-    puts("  <== You Color");
+    puts("  <== Your Color");
     // RGB Values
 
     printf("Red:   %4hd | 0x%2hx |", c.r, c.r);
