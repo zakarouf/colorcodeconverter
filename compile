@@ -1,0 +1,8 @@
+#!/bin/sh
+
+CCF=gcc
+CFLAGS='-O2'
+OP='ccc'
+
+#compile
+$CCF $CFLAGS color.c -o ccc
