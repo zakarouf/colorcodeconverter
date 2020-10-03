@@ -7,7 +7,7 @@
     - Make Color Darker
 
 ## How to use
-####NOTE: You Need a Terminal which supports Direct/True Color
+#### NOTE: You Need a Terminal which supports Direct/True Color
 
 ```
 git clone https://github.com/zakarouf/colorcodeconverter
