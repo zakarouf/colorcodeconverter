@@ -6,3 +6,7 @@ OP='ccc'
 
 #compile
 $CCF $CFLAGS color.c -o ccc
+
+if [[ $1 == '-i' ]]; then
+	mv $OP ~/bin/
+fi
