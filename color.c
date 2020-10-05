@@ -63,19 +63,19 @@ static int color_show_values(colrgb_t c, colhsv_t h)
     puts("  <== Your Color");
     // RGB Values
 
-    printf("Red:   %4hd | 0x%2hx |", c.r, c.r);
+    printf("Red:   %4hd | 0x%2.2hx |", c.r, c.r);
     colorB_set(0xff, 0, 0);
     color_draw_percent_bar(c.r, c.r+c.b+c.g, maxval, grate, ' ');
     color_reset();
     putchar('\n');
 
-    printf("Green: %4hd | 0x%2hx |", c.g, c.g);
+    printf("Green: %4hd | 0x%2.2hx |", c.g, c.g);
     colorB_set(0, 0xff, 0);
     color_draw_percent_bar(c.g, c.r+c.b+c.g, maxval, grate, ' ');
     color_reset();
     putchar('\n');
 
-    printf("Blue:  %4hd | 0x%2hx |", c.b, c.b);
+    printf("Blue:  %4hd | 0x%2.2hx |", c.b, c.b);
     colorB_set(0, 0, 0xff);
     color_draw_percent_bar(c.b, c.r+c.b+c.g, maxval, grate, ' ');
     color_reset();
@@ -213,32 +213,34 @@ static void color_darklit (colhsv_t hsv, int lim, float by)
         colorB_set(c.r, c.g, c.b);
         printf("          ");
         color_reset();
-        printf("#%2hx%2hx%2hx", c.r, c.g, c.b);
+        printf("#%2.2hx%2.2hx%2.2hx", c.r, c.g, c.b);
         printf("\n");
     }
 }
 
 static void color_subdarklit (colhsv_t hsv, int lim, float by)
 {
+    colrgb_t c;
     if(by > 0.0f)
     {
+        c = color_hsv_to_rgb(hsv);
         printf("Lighten up by %.1f%%\n", by);
     }
     else {
+        c = color_hsv_to_rgb(hsv);
         printf("Darken up by %.1f%%\n", by);
     }
-    
-    colrgb_t c;
 
     for (int i = 0; i < lim; ++i)
     {
         hsv.v = make_darklit(hsv.v, by/lim);
-        if(hsv.v >= 99.0f)
+        if(hsv.v > 100.0f && hsv.v < 0.0f)
         {
-        colorB_set(c.r, c.g, c.b);
-        printf("          ");
-        color_reset();
-        return;
+            colorB_set(c.r, c.g, c.b);
+            printf("          ");
+            color_reset();
+            printf("#%2.2hx%2.2hx%2.2hx\n", c.r, c.g, c.b);
+            return;
         }
         
         c = color_hsv_to_rgb(hsv);
@@ -249,6 +251,7 @@ static void color_subdarklit (colhsv_t hsv, int lim, float by)
     colorB_set(c.r, c.g, c.b);
     printf("          ");
     color_reset();
+    printf("#%2.2hx%2.2hx%2.2hx\n", c.r, c.g, c.b);
 }
 
 
@@ -290,13 +293,9 @@ static int phrasearg(char *arg[], int count, colhsv_t* h, colrgb_t* cpf)
                     break;
                 case 'c':
                     color_subdarklit(*h, 10, color_getffrom("-c%f", arg[i]));
-                    color_reset();
-                    printf("#%2hx%2hx%2hx\n", cpf->r, cpf->g, cpf->b);
                     break;
                 case 'v':
-                    color_subdarklit(*h, color_getffrom("-v%f", arg[i]), color_getffrom("-v%f", arg[i]));
-                    color_reset();
-                    printf("#%2hx%2hx%2hx\n", cpf->r, cpf->g, cpf->b);
+                    color_subdarklit(*h, fabs(color_getffrom("-v%f", arg[i])), color_getffrom("-v%f", arg[i]));
                     break;
 
                 default:
