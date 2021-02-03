@@ -8,13 +8,13 @@
 
 #define COLRS_HELP \
   "Commands:\n"\
-  "\t-h \t help\n"\
-  "\t-id\t get r,g,b\n"\
-  "\t-ix\t get rgb in hex\n"\
-  "\t-ih\t get h,s,v\n"\
-  "\t-c\t make color brighter/darker\n"\
-  "\t-v\t make color brighter/darker | verbotic\n"\
-  "\t-r\t make color brighter/darker | recursive\n"
+  "\t-h  \t help\n"\
+  "\t-id \t get r,g,b\n       "\
+  "\t-ix \t get rgb in hex\n  "\
+  "\t-ih \t get h,s,v\n       "\
+  "\t-c  \t make color brighter/darker\n"\
+  "\t-v  \t make color brighter/darker | smooth\n"\
+  "\t-r  \t make color brighter/darker | recursive\n"
 
 
 
@@ -208,15 +208,19 @@ static void color_darklit (colhsv_t hsv, int lim, float by)
     for (int i = 0; i < lim; ++i)
     {
         hsv.v = make_darklit(hsv.v, by);
-        if(hsv.v >= 99.0f)return;
         colrgb_t c = color_hsv_to_rgb(hsv);
         colorB_set(c.r, c.g, c.b);
         printf("          ");
         color_reset();
-        printf("#%2.2hx%2.2hx%2.2hx", c.r, c.g, c.b);
+        printf("#%2hx%2hx%2hx | ", c.r, c.g, c.b);
+        //printf("rgb(%3hd,%3hd,%3hd) | ", c.r, c.g, c.b);
+        //printf("hsv(%3.2f,%3.2f,%3.2f)", hsv.h, hsv.s, hsv.v);
         printf("\n");
+        if(hsv.v >= 99.0f)return;
+        if(hsv.v <= 0.0f)return;
     }
 }
+
 
 static void color_subdarklit (colhsv_t hsv, int lim, float by)
 {
@@ -316,8 +320,6 @@ int main(int argc, char *argv[]) {
   colrgb_t rgb;
   colhsv_t hsv;
   phrasearg(argv, argc, &hsv, &rgb);
-
-
 
   return 0;
 }

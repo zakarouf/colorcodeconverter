@@ -23,14 +23,18 @@ cd colorcodeconverter
     `./ccc -ix 90a355`
     `./ccc -id 12,34,100`
 
-2. `-l`
+2. `-c`
     Will Brighten the given color by a given percentage.
     Example:-
-    `./ccc -ix 09117d -l 4` <= Will Brigten it up by 4%.
+    `./ccc -ix 09117d -c4` <= Will Brigten it up by 4%.
+
+    Some Variation of `-c` are:
+        `-v` Shows a Smooth Line
+        `-r` Execute `-c` Multiple times
 
 
 ## Screenshots
 
-![1](docs/scr/scr1.png?raw=true)
-![2](docs/scr/scr2.png?raw=true)
-![3](docs/scr/scr3.png?raw=true)
+![1](docs/scr/scr1.png)
+![2](docs/scr/scr2.png)
+![3](docs/scr/scr3.png)
