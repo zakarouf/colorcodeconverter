@@ -5,8 +5,13 @@ CFLAGS='-O2'
 OP='ccc'
 
 #compile
-$CCF $CFLAGS color.c -o ccc
 
-if [[ $1 == '-i' ]]; then
+if [[ $1 == '-e' ]]; then
+	$CCF $CFLAGS color-extended.c -o ccc
+else
+	$CCF $CFLAGS color.c -o ccc
+fi
+
+if [[ $2 == '-i' ]]; then
 	mv $OP ~/bin/
 fi

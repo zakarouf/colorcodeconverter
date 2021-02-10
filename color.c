@@ -1,6 +1,5 @@
 #include <stdio.h>
 #include <math.h>
-#include <stdlib.h>
 #include <string.h>
 
 #include "color.h"
@@ -15,9 +14,6 @@
   "\t-c  \t make color brighter/darker\n"\
   "\t-v  \t make color brighter/darker | smooth\n"\
   "\t-r  \t make color brighter/darker | recursive\n"
-
-
-
 
 
 typedef struct colrs {
