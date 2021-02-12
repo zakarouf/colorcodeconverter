@@ -1,3 +1,6 @@
+/*-------------------------------------------------
+    Color Code Convertor (CCC) 2021
+--------------------------------------------------*/
 #include <stdio.h>
 #include <math.h>
 #include <string.h>
