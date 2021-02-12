@@ -1,5 +1,5 @@
-#ifndef COLORCODECONVERTER_H
-#define COLORCODECONVERTER_H
+#ifndef ZAKAROUF_COLORCODECONVERTER_H
+#define ZAKAROUF_COLORCODECONVERTER_H
 
 #define color_reset() \
     printf("\x1b[0m")

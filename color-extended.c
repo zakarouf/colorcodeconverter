@@ -1,9 +1,12 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <math.h>
 #include <string.h>
 
 #include "color.h"
 
+#define ZAKAROUF_CCC_VERSION "0.1.1"
+#define ZAKAROUF_CCC_YEAR    "2021-2022"
 
 #define COLRS_HELP \
   "Usage:\n"\
@@ -12,25 +15,37 @@
   "  ccc (Color Code Converter) by Zakarouf\n\n"\
   \
   "Options:\n"\
-  "  -h,                  help\n"\
-  "  -i[dxh],\n"\
-  "       d [x,y,z]       get r,g,b\n"\
-  "       x [xyz]         get rgb in hex\n"\
-  "       h [x,y,z]       get h,s,v\n"\
+  "  -h,              help\n\n"\
+  "  -I[0-9[dxh]] [VALUE],\n"\
+  "       0-9         Assign an ID, if unassigned ID is 0\n"\
+  "       d [x,y,z]   Get r,g,b\n"\
+  "       x [xyz]     Get rgb in hex\n"\
+  "       h [x,y,z]   Get h,s,v\n"\
   "\n"\
-  "  -c[rs],       make color brighter/darker\n"\
-  "  -v[rs],       make color brighter/darker | smooth\n"\
-  "  -r[rs],       make color brighter/darker | recursive\n"\
-  "  -t,           Modifier for -v,-r\n\n"\
-  \
-  "  -M[[hdx]sr],            \n"\
-  "         h       Take Modifier for HSV\n"\
-  "         d,x     Take Modifier for RGB\n"\
-  "         s       Specify Config Values\n"\
-  "         r       Retain The Orginal Value\n"\
+  "  -s[0-9]          Show Color Values\n"\
+  "  -S[0-9]          Select Color Value\n"\
+  "\n"\
+  "  -c[rs],          Make color brighter/darker\n"\
+  "  -v[rs],          Make color brighter/darker | smooth\n"\
+  "  -r[rs],          Make color brighter/darker | recursive\n"\
+  "  -t,              Modifier for -v,-r\n"\
+  "\n"\
+  "  -M[[hdx]sr] [VALUES..],            \n"\
+  "         h         Take Modifier for HSV\n"\
+  "         d,x       Take Modifier for RGB\n"\
+  "         s         Specify Config Values\n"\
+  "         r         Retain The Orginal Value\n"\
+  "  -s,              Show Current Color Values\n"\
   "Examples:\n"\
   \
-  "  $ ccc -id 25,163,136 -c 14\n"\
+  "  $ ccc -I0 d=25,163,136 -c 14\n"\
+  "  $ ccc -I2 h=230,60,80 -Mhrs x=10,b=1,y=20,1=1.1 -s2\n"\
+  "  $ ccc -I x=FF0211 -r 10 -t 14\n"\
+
+#define ZAKAROUF_CCC_INTRODUCTION\
+  \
+  "Welcome to the CCC (to quit type `\\q`, for Help type `-h`).\n"\
+  "CCC "ZAKAROUF_CCC_VERSION" by Zakarouf "ZAKAROUF_CCC_YEAR"\n"
 
 
 int hex[16] = {   '0', '1', '2', '3'
@@ -60,11 +75,26 @@ typedef struct colrhsv {
 
 }colhsv_t;
 
+
+#define ccc_isDigit_M(c)\
+    ((c < '0') ? 0 : ((c <= '9') ? 1 : 0 ))
+
 static float color_getFloatFromString(char pattern[] ,char s[])
 {
     float a;
     sscanf(s, pattern, &a);
     return a;
+}
+
+static int color_findCharInStr(char *str, int sz, char c)
+{
+    for (int i = 0; i < sz; ++i)
+    {
+        if(*str == c)
+            return 1;
+        str++;
+    }
+    return 0;
 }
 
 static void color_draw_percent_bar(const float at, const float outof, const float max, const float growthrate, char madeof)
@@ -84,71 +114,16 @@ static void color_draw_Block(int sz, char ch)
     }
 }
 
-static void color_getHexString(const int C[3], char *str)
+
+static float make_darklit(float v, float by)
 {
-    for (int i = 0; i < 3; i++)
-    {    
-        int tmp = (C[i] & 0xf0) >> 4;
-        int tmp1 = C[i] & 0x0f;
-        str[0 + (i*2)] = hex[tmp];
-        str[1 + (i*2)] = hex[tmp1];
-
-    }
-
-    str[6] = '\0';
+    return (v+by > 100.0f ? 100.0f : v+by);
 }
 
-static int color_show_values(colrgb_t c, colhsv_t h)
+static float color_changeHSV_Hvalue_WRAP(float hue, float by)
 {
-    const float maxval = 10.0f;
-    const float grate = 1.0f;
-
-    colorB_set(c.r, c.g, c.b);
-    printf("          ");
-    color_reset();
-    puts("  <== Your Color");
-    // RGB Values
-
-    printf("Red:   %4hd | 0x%2.2hx |", c.r, c.r);
-    colorB_set(0xff, 0, 0);
-    color_draw_percent_bar(c.r, c.r+c.b+c.g, maxval, grate, ' ');
-    color_reset();
-    putchar('\n');
-
-    printf("Green: %4hd | 0x%2.2hx |", c.g, c.g);
-    colorB_set(0, 0xff, 0);
-    color_draw_percent_bar(c.g, c.r+c.b+c.g, maxval, grate, ' ');
-    color_reset();
-    putchar('\n');
-
-    printf("Blue:  %4hd | 0x%2.2hx |", c.b, c.b);
-    colorB_set(0, 0, 0xff);
-    color_draw_percent_bar(c.b, c.r+c.b+c.g, maxval, grate, ' ');
-    color_reset();
-    puts("\n");
-
-    // HSV Values
-
-    printf("Hue:         %5.1f  |", h.h);
-    color_set(100, 200, 100);
-    color_draw_percent_bar(h.h, 360.0f, maxval, grate, '=');
-    color_reset();
-    putchar('\n');
-
-    printf("Saturation:  %5.1f  |", h.s);
-    color_set(100, 80, 10);
-    color_draw_percent_bar(h.s, 100.0f, maxval, grate, '=');
-    color_reset();
-    putchar('\n');
-
-    printf("Value:       %5.1f  |", h.v);
-    color_set(200, 166, 144);
-    color_draw_percent_bar(h.v, 100.0f, maxval, grate, '=');
-    color_reset();
-    putchar('\n');
-
-    return 0;
-
+    float rVal = hue + by;
+    return ((rVal >= 0.0f)? (fmodf(rVal, 360.0f)) : 360.f );
 }
 
 
@@ -158,7 +133,6 @@ static float color_max(float a, float b, float c) {
 static float color_min(float a, float b, float c) {
     return ((a < b)? (a < c ? a : c) : (b < c ? b : c));
 }
-
 
 static colhsv_t color_rgb_to_hsv(float r, float g, float b) {
     // R, G, B values are divided by 255
@@ -238,9 +212,58 @@ static colrgb_t color_hsv_to_rgb (colhsv_t hsv)
 
 }
 
-static float make_darklit(float v, float by)
+static int color_show_values(colrgb_t c, colhsv_t h)
 {
-    return (v+by > 100.0f ? 100.0f : v+by);
+    const float maxval = 10.0f;
+    const float grate = 1.0f;
+
+    colorB_set(c.r, c.g, c.b);
+    printf("          ");
+    color_reset();
+    puts("  <== Your Color");
+
+
+    // RGB Values
+    printf("Red:   %4hd | 0x%02hx |", c.r, c.r);
+    colorB_set(0xff, 0, 0);
+    color_draw_percent_bar(c.r, c.r+c.b+c.g, maxval, grate, ' ');
+    color_reset();
+    putchar('\n');
+
+    printf("Green: %4hd | 0x%02hx |", c.g, c.g);
+    colorB_set(0, 0xff, 0);
+    color_draw_percent_bar(c.g, c.r+c.b+c.g, maxval, grate, ' ');
+    color_reset();
+    putchar('\n');
+
+    printf("Blue:  %4hd | 0x%02hx |", c.b, c.b);
+    colorB_set(0, 0, 0xff);
+    color_draw_percent_bar(c.b, c.r+c.b+c.g, maxval, grate, ' ');
+    color_reset();
+    puts("\n");
+
+    // HSV Values
+
+    printf("Hue:         %5.1f |", h.h);
+    color_set(100, 200, 100);
+    color_draw_percent_bar(h.h, 360.0f, maxval, grate, '=');
+    color_reset();
+    putchar('\n');
+
+    printf("Saturation:  %5.1f |", h.s);
+    color_set(100, 80, 10);
+    color_draw_percent_bar(h.s, 100.0f, maxval, grate, '=');
+    color_reset();
+    putchar('\n');
+
+    printf("Value:       %5.1f |", h.v);
+    color_set(200, 166, 144);
+    color_draw_percent_bar(h.v, 100.0f, maxval, grate, '=');
+    color_reset();
+    putchar('\n');
+
+    return 0;
+
 }
 
 static void color_darklit (colhsv_t *hsv, int lim, float by)
@@ -251,9 +274,7 @@ static void color_darklit (colhsv_t *hsv, int lim, float by)
     }
     else {
         printf("Darken up by %.1f%%\n", by);
-    }
-
-   char hexstr[7] = {0}; 
+    } 
     
     for (int i = 0; i < lim; ++i)
     {
@@ -263,8 +284,7 @@ static void color_darklit (colhsv_t *hsv, int lim, float by)
         color_draw_Block(10, ' ');
         color_reset();
         
-        color_getHexString((int[]){c.r, c.g, c.b},hexstr);
-        printf("#%s | %.1f%%", hexstr, by*(i+1));
+        printf("#%0hx%0hx%0hx | %.1f%%", c.r, c.g, c.b, by*(i+1));
 
         printf("\n");
         if(hsv->v >= 99.0f)return;
@@ -272,9 +292,25 @@ static void color_darklit (colhsv_t *hsv, int lim, float by)
     }
 }
 
-
-static void color_subdarklit (colhsv_t *hsv, int lim, float by)
+static void color_darklit_mod(char *arg, colrgb_t *r, colhsv_t *h, colrgb_t r_ori, colhsv_t h_ori)
 {
+    for (int i = 2; i < 4; ++i)
+    {
+        if (arg[i] == 'r')
+        {
+            *r = r_ori;
+            *h = h_ori;
+        }
+        else if (arg[i] == 's')
+        {
+            color_show_values(*r, *h);
+        }
+    }
+}
+
+static void color_subdarklit (char *arg[],int at, int argc, colhsv_t *hsv , int lim, float by)
+{
+
     colrgb_t c;
     if(by > 0.0f)
     {
@@ -286,8 +322,8 @@ static void color_subdarklit (colhsv_t *hsv, int lim, float by)
         printf("Darken up by %.1f%%\n", by);
     }
 
-
-    char hexstr[7] = {0};
+    colhsv_t tmpHSV = *hsv;
+    colrgb_t tmpRGB = c;
 
     for (int i = 0; i < lim; ++i)
     {
@@ -298,8 +334,8 @@ static void color_subdarklit (colhsv_t *hsv, int lim, float by)
             printf("     ");
             color_reset();
             
-            color_getHexString((int[]){c.r, c.g, c.b},hexstr);
-            printf("#%s\n", hexstr);
+            printf("#%0hx%0hx%0hx\n", c.r, c.g, c.b);
+            color_darklit_mod(arg[at], &c, hsv, tmpRGB, tmpHSV);
             return;
         }
         
@@ -312,8 +348,9 @@ static void color_subdarklit (colhsv_t *hsv, int lim, float by)
     printf("          ");
     color_reset();
 
-    color_getHexString((int[]){c.r, c.g, c.b},hexstr);
-    printf("#%s\n", hexstr);
+    printf("#%0hx%0hx%0hx\n", c.r, c.g, c.b);
+
+    color_darklit_mod(arg[at], &c, hsv, tmpRGB, tmpHSV);
 }
 
 static void ccc_multiManupilation_HSV(const int x, const int y, const int bsize , colhsv_t *hsv, Vector3 changeRate, Vector3 changeRateModify)
@@ -327,15 +364,16 @@ static void ccc_multiManupilation_HSV(const int x, const int y, const int bsize 
             printf("\n");
         }
         
-        if(    (hsv->h < 360.0f && hsv->h > 0.0f)
-            && (hsv->s < 100.0f && hsv->s > 0.0f)
-            && (hsv->v < 100.0f && hsv->v > 0.0f)  )
+        if(    (hsv->h <= 360.0f && hsv->h >= 0.0f)
+            && (hsv->s <= 100.0f && hsv->s >= 0.0f)
+            && (hsv->v <= 100.0f && hsv->v >= 0.0f)  )
         {
-            hsv->h += (changeRate.x) * changeRateModify.x;
+            hsv->h = (color_changeHSV_Hvalue_WRAP(hsv->h, changeRate.x)) * changeRateModify.x;
             hsv->s += (changeRate.y) * changeRateModify.y;
             hsv->v += (changeRate.z) * changeRateModify.z;
 
             rgb = color_hsv_to_rgb(*hsv);
+            
 
             colorB_set(rgb.r, rgb.g, rgb.b);
             color_draw_Block(bsize, ' ');
@@ -387,29 +425,6 @@ static void ccc_multiManupilation_RGB(const int x, const int y, const int bsize 
     printf("\n");
 }
 
-static int ccc_getCOLOR(char *arg, char *arg2 ,colhsv_t* h, colrgb_t* cpf)
-{
-    
-    if (arg[2] == 'x') {
-        sscanf(arg2, "%2hx%2hx%2hx", &cpf->r, &cpf->g, &cpf->b);
-        *h = color_rgb_to_hsv((float)cpf->r, (float)cpf->g, (float)cpf->b);
-    }
-    else if(arg[2] == 'd'){
-        sscanf(arg2, "%3hd,%3hd,%3hd", &cpf->r, &cpf->g, &cpf->b);
-        *h = color_rgb_to_hsv((float)cpf->r, (float)cpf->g, (float)cpf->b);
-    }
-    else if(arg[2] == 'h'){
-        sscanf(arg2, "%f,%f,%f", &h->h, &h->s, &h->v);
-        *cpf = color_hsv_to_rgb(*h);
-    }
-    else
-    {
-        return 1;
-    }
-
-    return 0;
-}
-
 static int ccc_getDARKLIT_Config(char *arg[], int count, void *CONFIG)
 {
     for (int i = 0; i < count; ++i)
@@ -436,10 +451,10 @@ static void ccc_Manupilation(char *arg[], int at, int count, colrgb_t *rgb, colh
     // Setting Up Defaults
     const int TOTAL_VALUES = 9;
     int bz = 2
-        , x = 3
+        , x = 5
         , y = 5;
 
-    Vector3 ch_rate = {0.0f, 0.0f, 1.0f}
+    Vector3 ch_rate = {0.0f, 0.0f, 0.0f}
             , ch_rate_mod = {1.0f, 1.0f, 1.0f};
 
 
@@ -462,7 +477,7 @@ static void ccc_Manupilation(char *arg[], int at, int count, colrgb_t *rgb, colh
             }
         }
 
-        if (check == TOTAL_VALUES-1 && arg[at][3] != 's')
+        if (check == TOTAL_VALUES-1 && !color_findCharInStr(arg[at], 4, 's'))
         {
             sscanf(arg[at+1] ,"%d,%d,%d,%f,%f,%f,%f,%f,%f"
                     , &x, &y, &bz
@@ -526,7 +541,7 @@ static void ccc_Manupilation(char *arg[], int at, int count, colrgb_t *rgb, colh
     if (arg[at][2] == 'd' || arg[at][2] == 'x')
     {
         ccc_multiManupilation_RGB(x, y, bz ,rgb, ch_rate, ch_rate_mod);
-        if (arg[at][4] == 'r')
+        if (color_findCharInStr(arg[at], 4, 'r'))
         {
             *rgb = tmpRGB;
             *hsv = tmpHSV;
@@ -539,7 +554,7 @@ static void ccc_Manupilation(char *arg[], int at, int count, colrgb_t *rgb, colh
     else if (arg[at][2] == 'h')
     {
         ccc_multiManupilation_HSV(x, y, bz ,hsv, ch_rate, ch_rate_mod);
-        if (arg[at][4] == 'r')
+        if (color_findCharInStr(arg[at], 4, 'r'))
         {
             *rgb = tmpRGB;
             *hsv = tmpHSV;
@@ -551,26 +566,67 @@ static void ccc_Manupilation(char *arg[], int at, int count, colrgb_t *rgb, colh
 
 }
 
-static void color_darklit_mod(char *arg, colrgb_t *r, colhsv_t *h, colrgb_t r_ori, colhsv_t h_ori)
+static int ccc_getCOLOR(char *arg, char *arg2 ,colhsv_t* h, colrgb_t* cpf, int *AT_)
 {
-    for (int i = 2; i < 4; ++i)
+    int AT_color = *AT_;
+    if (ccc_isDigit_M(arg[2]))
     {
-        if (arg[i] == 'r')
-        {
-            *r = r_ori;
-            *h = h_ori;
-        }
-        else if (arg[i] == 's')
-        {
-            color_show_values(*r, *h);
-        }
+        AT_color = arg[2] - '0';
+        *AT_ = AT_color;
+        
     }
+
+        
+    if (arg2[0] == 'x') {
+        sscanf(arg2, "x=%2hx%2hx%2hx", &cpf[AT_color].r, &cpf[AT_color].g, &cpf[AT_color].b);
+        h[AT_color] = color_rgb_to_hsv((float)cpf[AT_color].r, (float)cpf[AT_color].g, (float)cpf[AT_color].b);
+    }
+    else if(arg2[0] == 'd'){
+        sscanf(arg2, "d=%hd,%hd,%hd", &cpf[AT_color].r, &cpf[AT_color].g, &cpf[AT_color].b);
+        h[AT_color] = color_rgb_to_hsv((float)cpf[AT_color].r, (float)cpf[AT_color].g, (float)cpf[AT_color].b);
+    }
+    else if(arg2[0] == 'h'){
+        sscanf(arg2, "h=%f,%f,%f", &h[AT_color].h, &h[AT_color].s, &h[AT_color].v);
+        cpf[AT_color] = color_hsv_to_rgb(h[AT_color]);
+    }
+    else
+    {
+        return -1;
+    }
+
+    return AT_color;
 }
 
 static int phrasearg(char *arg[], int count, colhsv_t* hsv, colrgb_t* rgb)
 {
-    colrgb_t tmpRGB = {0};
-    colhsv_t tmpHSV = {0};
+
+    static colrgb_t tmpRGB[10] = {
+        {0, 0, 0},
+        {0, 0, 0},
+        {0, 0, 0},
+        {0, 0, 0},
+        {0, 0, 0},
+        {0, 0, 0},
+        {0, 0, 0},
+        {0, 0, 0},
+        {0, 0, 0},
+        {0, 0, 0},
+    };
+    static colhsv_t tmpHSV[10] = {
+        {0, 0, 0},
+        {0, 0, 0},
+        {0, 0, 0},
+        {0, 0, 0},
+        {0, 0, 0},
+        {0, 0, 0},
+        {0, 0, 0},
+        {0, 0, 0},
+        {0, 0, 0},
+        {0, 0, 0},
+    };
+
+    static int AT_color = 0;
+    int tmp_int;
 
     for (int i = 0; i < count; i++)
     {
@@ -580,68 +636,174 @@ static int phrasearg(char *arg[], int count, colhsv_t* hsv, colrgb_t* rgb)
             {
                 case 'h': puts(COLRS_HELP);
                   break;
-                case 'i':
+                case 'I':
 
-                    if(ccc_getCOLOR(arg[i], arg[i+1] ,hsv, rgb))
+                    if((ccc_getCOLOR(arg[i], arg[i+1] ,hsv, rgb, &AT_color)) > 9)
+                    {
                         return 1;
-                    color_show_values(*rgb, *hsv);
-                    tmpRGB = *rgb;
-                    tmpHSV = *hsv;
+                    }
+
+                    color_show_values(rgb[AT_color], hsv[AT_color]);
+                    printf("%d\n", count);
+                    tmpRGB[AT_color] = rgb[AT_color];
+                    tmpHSV[AT_color] = hsv[AT_color];
                     putchar('\n');
 
                     break;
 
                 case 'r':
 
-                    color_darklit(hsv, ccc_getDARKLIT_Config(arg, count, NULL), color_getFloatFromString("%f", (arg[i + 1] == NULL) ? "0":arg[i+1] ));
-                    *rgb = color_hsv_to_rgb(*hsv);
+                    color_darklit(&hsv[AT_color], ccc_getDARKLIT_Config(arg, count, NULL), color_getFloatFromString("%f", (arg[i + 1] == NULL) ? "0":arg[i+1] ));
+                    rgb[AT_color] = color_hsv_to_rgb(hsv[AT_color]);
 
                     color_reset();
-                    color_darklit_mod(arg[i], rgb, hsv, tmpRGB, tmpHSV);
 
                     break;
                 case 'c':
-                    color_subdarklit(hsv, ccc_getDARKLIT_Config(arg, count, NULL), color_getFloatFromString("%f", (arg[i + 1] == NULL) ? "0":arg[i+1]));
-                    *rgb = color_hsv_to_rgb(*hsv);
+                    color_subdarklit(arg, i, count, &hsv[AT_color], ccc_getDARKLIT_Config(arg, count, NULL), color_getFloatFromString("%f", (arg[i + 1] == NULL) ? "0":arg[i+1]));
+                    rgb[AT_color] = color_hsv_to_rgb(hsv[AT_color]);
 
-                    color_darklit_mod(arg[i], rgb, hsv, tmpRGB, tmpHSV);
+                    
                     break;
                 case 'v':
-                    color_subdarklit(hsv, fabs(color_getFloatFromString("%f", arg[i + 1])), color_getFloatFromString("%f", (arg[i + 1] == NULL) ? "0":arg[i+1]));
-                    *rgb = color_hsv_to_rgb(*hsv);
+                    color_subdarklit(arg, i, count, &hsv[AT_color], fabs(color_getFloatFromString("%f", arg[i + 1])), color_getFloatFromString("%f", (arg[i + 1] == NULL) ? "0":arg[i+1]));
+                    rgb[AT_color] = color_hsv_to_rgb(hsv[AT_color]);
 
-                    color_darklit_mod(arg[i], rgb, hsv, tmpRGB, tmpHSV);
                     break;
 
                 case 'M':
-                    ccc_Manupilation(arg, i, count, rgb, hsv);
+                    ccc_Manupilation(arg, i, count, &rgb[AT_color], &hsv[AT_color]);
                     printf("\n");
                     break;
+
+                case 'O':
+                    rgb[AT_color] = tmpRGB[AT_color];
+                    hsv[AT_color] = tmpHSV[AT_color];
+                    break;
                 
+                case 's':
+                    if (ccc_isDigit_M(arg[i][2]))
+                    {
+                        tmp_int = arg[i][2] - '0' ;
+                        color_show_values(rgb[tmp_int], hsv[tmp_int]);
+                    }
+                    else {
+                        color_show_values(rgb[AT_color], hsv[AT_color]);
+                    }
+                    break;
+                case 'S':
+                    if(ccc_isDigit_M(arg[i][2]))
+                    {
+                        AT_color = arg[i][2] - '0';
+                    }
+
+
 
                 default:
                     break;
             }
+
+            
             color_reset();
         }
+        //color_set(250, 10, 10);
+        //printf("%s\n", arg[i]);
     }
 
-  return 0;
+  return AT_color;
 
 }
 
-int main(int argc, char *argv[]) {
+char **zse_malloc_2D_array_char (unsigned int x, unsigned int y) {
 
-    colrgb_t rgb;
-    colhsv_t hsv;
-
-    if (argc <= 1)
+    char **arr = malloc(y * sizeof(char*));
+    for (int i = 0; i < y; ++i)
     {
-        puts(COLRS_HELP);
-        return 1;
+        arr[i] = (char*)malloc(x * sizeof(char));
     }
 
-    phrasearg(argv, argc, &hsv, &rgb);
+    return arr;
+
+}
+
+void zse_free2dchar(char **mem, int size)
+{
+    for (int i = 0; i < size; ++i)
+    {
+        free(mem[i]);
+    }
+    free(mem);
+
+}
+
+// Start Interactive Mode if No arguments given
+static void ccc_interactive_mode (colrgb_t *rgb, colhsv_t *hsv)
+{
+    printf("Starting Interactive Mode...\n"
+        ZAKAROUF_CCC_INTRODUCTION);
+    int At = 0
+        , quit = 0
+        , buffXsize = 100
+        , buffYsize = 100
+        , argc = 0;
+
+    
+    char ** buffer_FINAL = zse_malloc_2D_array_char(buffXsize, buffYsize);
+    char * buffer = malloc(sizeof(char) * buffYsize * buffXsize);
+    char * token;
+
+    while (!quit)
+    {
+        color_set(255, 0, 0); printf("%d", At);
+        color_set(0, 255, 0); printf(">");
+        color_set(0, 0, 255); printf("> ");
+        color_reset();
+        
+        
+        scanf("%[^\n]%*c", buffer);
+        
+        if (buffer[0] == '\\' && buffer[1] == 'q')
+        {
+            quit = 1;
+        }
+
+        token = strtok(buffer, " ");
+
+        
+        for (int i = 0; i < buffXsize && token != NULL; ++i)
+        {
+
+            sprintf(buffer_FINAL[i], "%s", token);
+            token = strtok(NULL, " ");
+            argc ++;
+
+
+        }
+
+        At = phrasearg(buffer_FINAL, argc, hsv, rgb);
+        argc = 0;
+
+    }
+
+    zse_free2dchar(buffer_FINAL, buffYsize);
+    free(buffer);
+}
+
+
+int main(int argc, char *argv[]) {
+
+    colrgb_t rgb[10] = { 0 };
+    colhsv_t hsv[10] = { 0 };
+
+    if (argc >= 1)
+    {
+        phrasearg(argv, argc, hsv, rgb);
+    }
+
+    if (argc <= 1 || (argv[1][0] == '-'  &&  argv[1][1] == 'i') )
+    {
+        ccc_interactive_mode(rgb, hsv);
+    }
 
     return 0;
 }
