@@ -17,16 +17,16 @@ cd colorcodeconverter
 ```
 
 ### Arguments
-1. `-i[d,x,h]`
+1. `-I [d,x,h]`
     Will take a value in `d`Comma Seperated RGB `x`Hexadecimal `h`Comma Seperated HSV. And then thow the details.
     Example:-
-    `./ccc -ix 90a355`
-    `./ccc -id 12,34,100`
+    `./ccc -I x=90a355`
+    `./ccc -I d=12,34,100`
 
 2. `-c`
     Will Brighten the given color by a given percentage.
     Example:-
-    `./ccc -ix 09117d -c4` <= Will Brigten it up by 4%.
+    `./ccc -Ix 09117d -c 4` <= Will Brigten it up by 4%.
 
     Some Variation of `-c` are:
         `-v` Shows a Smooth Line
