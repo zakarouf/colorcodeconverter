@@ -7,9 +7,9 @@ OP='ccc'
 #compile
 
 if [[ $1 == '-e' ]]; then
-	$CCF $CFLAGS color-extended.c -o ccc
+	$CCF $CFLAGS ccc-extended.c -o ccc
 else
-	$CCF $CFLAGS color.c -o ccc
+	$CCF $CFLAGS ccc.c -o ccc
 fi
 
 if [[ $2 == '-i' ]]; then
