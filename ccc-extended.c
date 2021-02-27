@@ -39,7 +39,6 @@ typedef struct colrhsv {
 }colhsv_t;
 
 
-
 typedef struct colALLEncompass
 {
     colrgb_t *rgb;
@@ -61,7 +60,7 @@ static float ccc_commandsExtra_GetSelf(float self)
 }
 
 #define ccc_command_MAX_COMMANDS_M 13
-static ccc_command_t gCCC_commands[ccc_command_MAX_COMMANDS_M] = {
+static const ccc_command_t gCCC_commands[ccc_command_MAX_COMMANDS_M] = {
 
     ccc_commandsExtra_GetSelf
     , sinf, cosf, tanf
@@ -119,6 +118,7 @@ static ccc_command3_t gCCC_commands_Major[ccc_commandMajor_MAX_COMMANDS_M] = {
 
 //________CCC_commands_END_________//
 
+// Manupulation Args
 typedef struct ccc_Manupilation_args
 {
     int i,x,y,bz;
@@ -187,7 +187,7 @@ static void color_draw_percent_bar(const float at, const float outof, const floa
     const float lim = (at/outof)*(max);
     for (float i = 0; i < lim; i += growthrate)
     {
-        putchar(madeof);
+        putc(madeof, stdout);
     }
 }
 
@@ -196,7 +196,7 @@ static void color_draw_Block(int sz, char ch)
 {
     for (int i = 0; i < sz; ++i)
     {
-        putchar(ch);
+        putc(ch, stdout);
     }
 }
 
@@ -296,71 +296,40 @@ static colrgb_t color_hsv_to_rgb (colhsv_t hsv)
 
 }
 
-// Draw Color and Show their Contents
-static int color_show_values(colrgb_t c, colhsv_t h)
+static void color_dk_getvals(char * arg, float *by, int *lim)
 {
-    const float maxval = 10.0f;
-    const float grate = 1.0f;
+    char *token = strtok(arg, ",");
 
-    putchar('\n');
-    colorB_set(c.r, c.g, c.b);
-    printf("          ");
-    color_reset();
-    puts("  <== Your Color");
+    while (token != NULL)
+    {
+        if (token[0] == 'v')
+        {
+            sscanf(token, "v=%f", by);
+        }
+        else if (token[0] == 'i')
+        {
+            sscanf(token, "i=%d", lim);
+        }
 
-
-    // RGB Values
-    printf("Red:   %4hd | 0x%02hx |", c.r, c.r);
-    colorB_set(0xff, 0, 0);
-    color_draw_percent_bar(c.r, c.r+c.b+c.g, maxval, grate, ' ');
-    color_reset();
-    putchar('\n');
-
-    printf("Green: %4hd | 0x%02hx |", c.g, c.g);
-    colorB_set(0, 0xff, 0);
-    color_draw_percent_bar(c.g, c.r+c.b+c.g, maxval, grate, ' ');
-    color_reset();
-    putchar('\n');
-
-    printf("Blue:  %4hd | 0x%02hx |", c.b, c.b);
-    colorB_set(0, 0, 0xff);
-    color_draw_percent_bar(c.b, c.r+c.b+c.g, maxval, grate, ' ');
-    color_reset();
-    puts("\n");
-
-    // HSV Values
-
-    printf("Hue:         %5.1f |", h.h);
-    color_set(100, 200, 100);
-    color_draw_percent_bar(h.h, 360.0f, maxval, grate, '=');
-    color_reset();
-    putchar('\n');
-
-    printf("Saturation:  %5.1f |", h.s);
-    color_set(100, 80, 10);
-    color_draw_percent_bar(h.s, 100.0f, maxval, grate, '=');
-    color_reset();
-    putchar('\n');
-
-    printf("Value:       %5.1f |", h.v);
-    color_set(200, 166, 144);
-    color_draw_percent_bar(h.v, 100.0f, maxval, grate, '=');
-    color_reset();
-    putchar('\n');
-
-    return 0;
-
+        token = strtok(NULL, ",");
+        
+    }
 }
 
 // Color Dark/Lit
-static void color_darklit (colhsv_t *hsv, int lim, float by)
+static void color_darklit (char * arg1, char * arg2, colhsv_t *hsv)
 {
+    float by = 0;
+    int lim = 5;
+
+    color_dk_getvals(arg2, &by, &lim);
+
     if(by > 0.0f)
     {
-        printf("Lighten up by %.1f%%\n", by);
+        printf("\nLighten up by %.1f%%\n", by);
     }
     else {
-        printf("Darken up by %.1f%%\n", by);
+        printf("\nDarken up by %.1f%%\n", by);
     } 
     
     for (int i = 0; i < lim; ++i)
@@ -374,8 +343,8 @@ static void color_darklit (colhsv_t *hsv, int lim, float by)
         printf("#%02hx%02hx%02hx | %.1f%%", c.r, c.g, c.b, by*(i+1));
 
         printf("\n");
-        if(hsv->v >= 99.0f)return;
-        if(hsv->v <= 0.0f)return;
+        if(hsv->v > 100.0f)return;
+        if(hsv->v < 0.0f)return;
     }
 }
 
@@ -391,39 +360,41 @@ static void color_subdarklit_mod(char *arg, colrgb_t *r, colhsv_t *h, colrgb_t r
         }
         else if (arg[i] == 's')
         {
-            color_show_values(*r, *h);
+            //color_show_values(*r, *h);
         }
     }
 }
 
 // Sub Light/Dark
-static void color_subdarklit (char *arg[],int at, int argc, colhsv_t *hsv , int lim, float by)
+static void color_subdarklit (char * arg1, char * arg2, colhsv_t *hsv)
 {
-    colrgb_t c;
+    float by = 0;
+    int lim = 5;
+    color_dk_getvals(arg2, &by, &lim);
+
+    colrgb_t c = color_hsv_to_rgb(*hsv);
     if(by > 0.0f)
     {
-        c = color_hsv_to_rgb(*hsv);
-        printf("Lighten up by %.1f%%\n", by);
+        printf("\nLighten up by %.1f%%\n", by);
     }
     else {
-        c = color_hsv_to_rgb(*hsv);
-        printf("Darken up by %.1f%%\n", by);
+        printf("\nDarken up by %.1f%%\n", by);
     }
 
     colhsv_t tmpHSV = *hsv;
-    colrgb_t tmpRGB = c;
 
     for (int i = 0; i < lim; ++i)
     {
         hsv->v = color_changeHSV_Vvalue(hsv->v, by/lim);
         if(hsv->v > 100.0f && hsv->v < 0.0f) // if out of bounds then return
         {
+            break;
             colorB_set(c.r, c.g, c.b);
             printf("     ");
             color_reset();
             
             printf("#%02hx%02hx%02hx\n", c.r, c.g, c.b);
-            color_subdarklit_mod(arg[at], &c, hsv, tmpRGB, tmpHSV);
+            if(color_findCharInStr(arg1, 4 ,'r'))hsv[0]=tmpHSV;
             return;
         }
         
@@ -438,13 +409,12 @@ static void color_subdarklit (char *arg[],int at, int argc, colhsv_t *hsv , int 
 
     printf("#%02hx%02hx%02hx\n", c.r, c.g, c.b);
 
-    color_subdarklit_mod(arg[at], &c, hsv, tmpRGB, tmpHSV);
+    if(color_findCharInStr(arg1, 4 ,'r'))hsv[0]=tmpHSV;
 }
 
 // __Mainupulation for HSV Values
 static void ccc_multiManupilation_HSV(colhsv_t *hsv, colrgb_t *rgb ,Vf3 changeValue, Vi3 changeRate_com, Vi3 changeRate_major_com)
-{
-        
+{      
     if(    (hsv->h <= 360.0f && hsv->h >= 0.0f)
         && (hsv->s <= 100.0f && hsv->s >= 0.0f)
         && (hsv->v <= 100.0f && hsv->v >= 0.0f)  )
@@ -459,7 +429,6 @@ static void ccc_multiManupilation_HSV(colhsv_t *hsv, colrgb_t *rgb ,Vf3 changeVa
     {
         return;
     }
-
 }
 
 // __Mainupulation for RGB Values
@@ -480,6 +449,7 @@ static void ccc_multiManupilation_RGB(colhsv_t *hsv , colrgb_t *rgb, Vf3 changeV
     }
 }
 
+// Manupilation Calls
 static void ccc_Manupilation_makeCalls(char calltype ,ccc_manArg_t arg, CCC_Color_t color ,char *msg, int at)
 {
     void (*call)(colhsv_t*, colrgb_t*, Vf3, Vi3, Vi3);
@@ -498,25 +468,29 @@ static void ccc_Manupilation_makeCalls(char calltype ,ccc_manArg_t arg, CCC_Colo
     }
 
     int y = 0;
-    for (int i = 0; i < arg.i; ++i)
+    for (int i = 1; i < arg.i+1; ++i)
     {
-        if (!(i % arg.x))
-        {
-            printf("\n");
-            y++;
-        }
-
         call(color.hsv, color.rgb, arg.chVal, arg.chr8_min, arg.chr8_maj);
 
         colorB_set(color.rgb->r, color.rgb->g, color.rgb->b);
         color_draw_Block(arg.bz, ' ');
         color_reset();
-
-        if (y > arg.y)
+        if (!(i % arg.x))
         {
-            break;
+            y++;
+            if (y > arg.y)
+            {
+                printf("%s" ,msg);
+                return;
+            }
+            else
+            {
+                printf("\n");
+            }
         }
+
     }
+    printf("%s" ,msg);
 }
 
 // Color Manupulation
@@ -537,7 +511,7 @@ static void ccc_Manupilation(char *arg[], int at, int count, colrgb_t *rgb, colh
 
     };
 
-
+    char linebreakAtend[2] = "";
 
     // Check if all the values are given
     if(arg[at+1] != NULL)
@@ -571,7 +545,7 @@ static void ccc_Manupilation(char *arg[], int at, int count, colrgb_t *rgb, colh
             if (arg[at + 1] == NULL)
                 return;
 
-            char *token = arg[at + 1];
+            char *token = strtok(arg[at+1], ",");
     
             /* Token types (char = actual variable it is representing)
                 i = it
@@ -588,7 +562,7 @@ static void ccc_Manupilation(char *arg[], int at, int count, colrgb_t *rgb, colh
                 B =
                 C =
             */
-            for (int i = 0; i < TOTAL_VALUES && token != NULL; i++)
+            while (token != NULL)
             {
                 if (token[0] == 'i')
                 {
@@ -647,11 +621,12 @@ static void ccc_Manupilation(char *arg[], int at, int count, colrgb_t *rgb, colh
                 {
                     sscanf(token, "C=%d", &CCC_m_arg.chr8_maj.z);
                 }
+                else if(token[0] == 'm')
+                {
+                    linebreakAtend[0] = '\n';
+                }
     
-                if (i == 0)
-                    token = strtok(arg[at+1], ",");
-                else
-                    token = strtok(NULL, ",");
+                token = strtok(NULL, ",");
     
             }
         }
@@ -662,36 +637,15 @@ static void ccc_Manupilation(char *arg[], int at, int count, colrgb_t *rgb, colh
     colhsv_t tmpHSV = *hsv;
 
 
-    ccc_Manupilation_makeCalls(arg[at][2], CCC_m_arg, (CCC_Color_t){rgb, hsv, 1}, "None", 10);
+    ccc_Manupilation_makeCalls(arg[at][2], CCC_m_arg, (CCC_Color_t){rgb, hsv, 1}, linebreakAtend, 10);
 
-    if (color_findCharInStr(arg[at], 4, 'r'))
+
+    if (color_findCharInStr(arg[at], 5, 'r'))
     {
             *rgb = tmpRGB;
             *hsv = tmpHSV;
     }
 
-}
-
-// Get Dark/Light Config
-static int ccc_getDARKLIT_Config(char *arg[], int count, void *CONFIG)
-{
-    for (int i = 0; i < count; ++i)
-    {
-        if(arg[i][0] == '-')
-        {
-            switch(arg[i][1])
-            {
-                case 't':
-                    return color_getFloatFromString("%f", arg[i + 1]);
-                break;
-
-                default:
-                    break;
-            }
-        }
-    }
-
-    return 10;
 }
 
 // Get Color From String
@@ -754,25 +708,84 @@ static int ccc_BreakStringInto2DString_ASTOKENS (char ** buffer2D ,int buffXsize
     char * token;
     int count = 0;
 
-    token = strtok(buffer, " \n");
+    token = strtok(buffer, token_breaker);
 
     for (int i = 0; i < buffXsize && token != NULL; ++i)
     {
         sprintf(buffer2D[i], "%s", token);
-        token = strtok(NULL, " \n");
+        token = strtok(NULL, token_breaker);
         count++;
     }
 
     return count;
 }
 
+// Draw Color and Show their Contents
+static int color_show_values(colrgb_t c, colhsv_t h)
+{
+    const float maxval = 10.0f;
+    const float grate = 1.0f;
+
+    putchar('\n');
+    colorB_set(c.r, c.g, c.b);
+    printf("          ");
+    color_reset();
+    puts("  <== Your Color");
+
+
+    // RGB Values
+    printf("Red:   %4hd | 0x%02hx |", c.r, c.r);
+    colorB_set(0xff, 0, 0);
+    color_draw_percent_bar(c.r, c.r+c.b+c.g, maxval, grate, ' ');
+    color_reset();
+    putchar('\n');
+
+    printf("Green: %4hd | 0x%02hx |", c.g, c.g);
+    colorB_set(0, 0xff, 0);
+    color_draw_percent_bar(c.g, c.r+c.b+c.g, maxval, grate, ' ');
+    color_reset();
+    putchar('\n');
+
+    printf("Blue:  %4hd | 0x%02hx |", c.b, c.b);
+    colorB_set(0, 0, 0xff);
+    color_draw_percent_bar(c.b, c.r+c.b+c.g, maxval, grate, ' ');
+    color_reset();
+    puts("\n");
+
+    // HSV Values
+
+    printf("Hue:         %5.1f |", h.h);
+    color_set(100, 200, 100);
+    color_draw_percent_bar(h.h, 360.0f, maxval, grate, '=');
+    color_reset();
+    putchar('\n');
+
+    printf("Saturation:  %5.1f |", h.s);
+    color_set(100, 80, 10);
+    color_draw_percent_bar(h.s, 100.0f, maxval, grate, '=');
+    color_reset();
+    putchar('\n');
+
+    printf("Value:       %5.1f |", h.v);
+    color_set(200, 166, 144);
+    color_draw_percent_bar(h.v, 100.0f, maxval, grate, '=');
+    color_reset();
+    putchar('\n');
+
+    return 0;
+}
+
 // Read Command From File
-static int ccc_commandPhrasing(char *arg[], int count, colhsv_t* hsv, colrgb_t* rgb);
-static void ccc_RunFile(char * file, colrgb_t *rgb, colhsv_t *hsv)
+static int ccc_commandPhrasing(char *arg[], int count, CCC_Color_t color);
+static void ccc_RunFile(char * file, CCC_Color_t color)
 {
     int buffsz;
     int tokens;
     char * buff = ccc_ReadFromFile(file, &buffsz);
+    if (buff == NULL)
+    {
+        return;
+    }
 
     int buffXsize = 100;
     int buffYsize = 100;
@@ -780,14 +793,15 @@ static void ccc_RunFile(char * file, colrgb_t *rgb, colhsv_t *hsv)
     char ** buff2d = zse_malloc_2D_array_char(buffXsize, buffYsize);
     tokens = ccc_BreakStringInto2DString_ASTOKENS(buff2d, buffXsize, buffYsize, buff, " \n");
 
-    ccc_commandPhrasing(buff2d, tokens, hsv, rgb);
+    ccc_commandPhrasing(buff2d, tokens, color);
 
     zse_free2dchar(buff2d, buffYsize);
+    free(buff);
 
 }
 
 // Main Command Phrasing
-static int ccc_commandPhrasing(char *arg[], int count, colhsv_t* hsv, colrgb_t* rgb)
+static int ccc_commandPhrasing(char *arg[], int count, CCC_Color_t color)
 {
     // Create Temperory for Hard Reset.
     static colrgb_t tmpRGB[10] = { 0 };
@@ -823,47 +837,43 @@ static int ccc_commandPhrasing(char *arg[], int count, colhsv_t* hsv, colrgb_t* 
                 // Take Color into Memory
                 case 'I':
 
-                    if((ccc_getCOLOR(arg[i], arg[i+1] ,hsv, rgb, &AT_color)) > 9)
+                    if((ccc_getCOLOR(arg[i], arg[i+1] ,color.hsv, color.rgb, &AT_color)) > 9)
                     {
                         return -1;
                     }
-
-                    color_show_values(rgb[AT_color], hsv[AT_color]);
-                    tmpRGB[AT_color] = rgb[AT_color];
-                    tmpHSV[AT_color] = hsv[AT_color];
-                    putchar('\n');
+                    tmpRGB[AT_color] = color.rgb[AT_color];
+                    tmpHSV[AT_color] = color.hsv[AT_color];
 
                     break;
 
                 // Darken/Lighten Up Color (Recursive)
                 case 'r':
-                    color_darklit(&hsv[AT_color], ccc_getDARKLIT_Config(arg, count, NULL), color_getFloatFromString("%f", (arg[i + 1] == NULL) ? "0":arg[i+1] ));
-                    rgb[AT_color] = color_hsv_to_rgb(hsv[AT_color]);
+                    color_darklit(arg[i], arg[i + 1], &color.hsv[AT_color]);
+                    color.rgb[AT_color] = color_hsv_to_rgb(color.hsv[AT_color]);
                     color_reset();
                     break;
 
                 // Darken/Lighten Up Color
                 case 'c':
-                    color_subdarklit(arg, i, count, &hsv[AT_color], ccc_getDARKLIT_Config(arg, count, NULL), color_getFloatFromString("%f", (arg[i + 1] == NULL) ? "0":arg[i+1]));
-                    rgb[AT_color] = color_hsv_to_rgb(hsv[AT_color]);
+                    color_subdarklit(arg[i], arg[i+1], &color.hsv[AT_color]);
+                    color.rgb[AT_color] = color_hsv_to_rgb(color.hsv[AT_color]);
                     break;
 
                 // Darken/Lighten Up Color (Makes a Long Percent Bar)
                 case 'v':
-                    color_subdarklit(arg, i, count, &hsv[AT_color], fabs(color_getFloatFromString("%f", arg[i + 1])), color_getFloatFromString("%f", (arg[i + 1] == NULL) ? "0":arg[i+1]));
-                    rgb[AT_color] = color_hsv_to_rgb(hsv[AT_color]);
+                    color_subdarklit(arg[i], arg[i+1], &color.hsv[AT_color]);
+                    color.rgb[AT_color] = color_hsv_to_rgb(color.hsv[AT_color]);
                     break;
 
                 // Manupilate Color (More verbose)
                 case 'M':
-                    ccc_Manupilation(arg, i, count, &rgb[AT_color], &hsv[AT_color]);
-                    printf("\n");
+                    ccc_Manupilation(arg, i, count, &color.rgb[AT_color], &color.hsv[AT_color]);
                     break;
 
                 // Reset Color w/ Original input color
-                case 'O':
-                    rgb[AT_color] = tmpRGB[AT_color];
-                    hsv[AT_color] = tmpHSV[AT_color];
+                case 'R':
+                    color.rgb[AT_color] = tmpRGB[AT_color];
+                    color.hsv[AT_color] = tmpHSV[AT_color];
                     break;
                 
                 // Show Selected Color Contents
@@ -871,10 +881,23 @@ static int ccc_commandPhrasing(char *arg[], int count, colhsv_t* hsv, colrgb_t* 
                     if (ccc_isDigit_MF(arg[i][2]))
                     {
                         tmp_int = arg[i][2] - '0' ;
-                        color_show_values(rgb[tmp_int], hsv[tmp_int]);
+                        color_show_values(color.rgb[tmp_int], color.hsv[tmp_int]);
+                    }
+                    else if(arg[i][2] == '-' && arg[i][3] == '1')
+                    {
+                        for (int i = 0; i < color.size; ++i)
+                        {
+                            colorB_set(color.rgb[i].r, color.rgb[i].g, color.rgb[i].b);
+                            color_draw_Block(10, ' ');
+                            printf("| ID: %d | #%02hx%02hx%02hx | %f,%f,%f\n"
+                                , i, color.rgb[i].r, color.rgb[i].g, color.rgb[i].b
+                                , color.hsv[i].h, color.hsv[i].s, color.hsv[i].v
+                            );
+                            color_reset();
+                        }
                     }
                     else {
-                        color_show_values(rgb[AT_color], hsv[AT_color]);
+                        color_show_values(color.rgb[AT_color], color.hsv[AT_color]);
                     }
                     break;
 
@@ -884,14 +907,27 @@ static int ccc_commandPhrasing(char *arg[], int count, colhsv_t* hsv, colrgb_t* 
                     {
                         AT_color = arg[i][2] - '0';
                     }
+                    break;
 
                 // Read Comands From File
                 case 'F':
                     if (arg[i+1] != NULL)
                     {
-                        ccc_RunFile(arg[i+1], rgb, hsv);
+                        ccc_RunFile(arg[i+1], color);
                     }
                     break;
+                case 'C':
+                    if (arg[i+1] != NULL)
+                    {
+                        sscanf(arg[i+1], "%d", &tmp_int);
+                        if (ccc_checkIfInRange(tmp_int, 0, color.size))
+                        {
+                            memcpy(&color.rgb[AT_color], &color.rgb[tmp_int], sizeof(colrgb_t));
+                            memcpy(&color.hsv[AT_color], &color.hsv[tmp_int], sizeof(colhsv_t));
+                        }
+                    }
+                    break;
+
 
                 // Do Nothing
                 default:
@@ -907,7 +943,7 @@ static int ccc_commandPhrasing(char *arg[], int count, colhsv_t* hsv, colrgb_t* 
 }
 
 // Start Interactive Mode if No arguments given or Specified Otherwise
-static void ccc_interactive_mode (colrgb_t *rgb, colhsv_t *hsv)
+static void ccc_interactive_mode (CCC_Color_t color)
 {
     printf("Starting Interactive Mode...\n"
         ZAKAROUF_CCC_INTRODUCTION);
@@ -944,7 +980,7 @@ static void ccc_interactive_mode (colrgb_t *rgb, colhsv_t *hsv)
         argumentCount = ccc_BreakStringInto2DString_ASTOKENS (buffer_FINAL , buffXsize,  buffYsize, buffer, " \n");
 
         // Phrase Array of String as Commands. Returns the color cursor ID.
-        At = ccc_commandPhrasing(buffer_FINAL, argumentCount, hsv, rgb);
+        At = ccc_commandPhrasing(buffer_FINAL, argumentCount, color);
 
     }
 
@@ -952,23 +988,38 @@ static void ccc_interactive_mode (colrgb_t *rgb, colhsv_t *hsv)
     free(buffer);
 }
 
+CCC_Color_t color_init_empty(int size)
+{
+    return (CCC_Color_t) {
+        .size = size,
+        .rgb = malloc(sizeof(colrgb_t) * size),
+        .hsv = malloc(sizeof(colhsv_t) * size)
+    };
+}
+
+void color_delete(CCC_Color_t *color)
+{
+    free(color->rgb);
+    free(color->hsv);
+    color->size = 0;
+}
+
 /*--------------------------------------*/
 int main(int argc, char *argv[]) {
 
     // Main Color Holder...
-    colrgb_t rgb[10] = { 0 }; 
-    colhsv_t hsv[10] = { 0 };
+    CCC_Color_t color = color_init_empty(10);
 
     if (argc >= 1)
     {
-        // Main Lexer(..?) type comand interface
-        ccc_commandPhrasing(argv, argc, hsv, rgb);
+        // Main Lexer(..?) type command interface
+        ccc_commandPhrasing(argv, argc, color);
     }
 
     if (argc <= 1 || (argv[1][0] == '-'  &&  argv[1][1] == 'i') )
     {
         // Interactive Mode
-        ccc_interactive_mode(rgb, hsv);
+        ccc_interactive_mode(color);
     }
 
     return 0;

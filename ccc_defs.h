@@ -1,15 +1,17 @@
 #ifndef ZAKAROUF_CCC_DEFINITION
 #define ZAKAROUF_CCC_DEFINITION
+/*----------------------------*/
 
-
-#define ZAKAROUF_CCC_VERSION "0.1.1"
+#define ZAKAROUF_CCC_VERSION "0.2.0"
 #define ZAKAROUF_CCC_YEAR    "2021-2022"
+#define ZAKAROUF_CCC_HOSTPAGE "github.com/zakarouf/colorcodeconverter"
 
 #define COLRS_HELP \
   "Usage:\n"\
   \
   "  ccc -i[dxh] [OPTIONS...]\n\n"\
   "  ccc (Color Code Converter) by Zakarouf\n\n"\
+  "  " ZAKAROUF_CCC_HOSTPAGE"\n\n"\
   \
   "Options:\n"\
   "  -h,              help\n\n"\
@@ -24,10 +26,9 @@
   "  -s[0-9]          Show Color Values\n"\
   "  -S[0-9]          Select Color Value\n"\
   "\n"\
-  "  -c[rs],          Make color brighter/darker\n"\
-  "  -v[rs],          Make color brighter/darker | smooth\n"\
-  "  -r[rs],          Make color brighter/darker | recursive\n"\
-  "  -t,              Modifier for -v,-r\n"\
+  "  -c[rs] [v,i]=[],  Make color brighter/darker\n"\
+  "  -v[rs] [v,i]=[],  Make color brighter/darker | smooth\n"\
+  "  -r[rs] [v,i]=[],  Make color brighter/darker | recursive\n"\
   "\n"\
   "  -M[[dxh]sr] [VALUES..],            \n"\
   "         h         Take Modifier for HSV\n"\
@@ -35,7 +36,10 @@
   "         s         Specify Config Values\n"\
   "         r         Retain The Orginal Value\n"\
   "\n"\
-  "  -F [FILENAME]    Read Commnads From A File\n"\
+  "  -R, 			        Reset Color Value To Original\n"\
+  "  -C [Value],      Copy Color Value To self\n"\
+  "\n"\
+  "  -F [FILENAME],   Read Commnads From A File\n"\
   "\n"\
   "Examples:\n"\
   \
@@ -46,7 +50,7 @@
 #define ZAKAROUF_CCC_INTRODUCTION\
   \
   "Welcome to the CCC (to quit type `\\q`, for Help type `-h`).\n"\
-  "CCC "ZAKAROUF_CCC_VERSION" by Zakarouf "ZAKAROUF_CCC_YEAR"\n"
+  "CCC " ZAKAROUF_CCC_VERSION" by Zakarouf " ZAKAROUF_CCC_YEAR"\n"
 
 
 #endif

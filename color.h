@@ -13,5 +13,10 @@
 #define colorAll_set(r, g, b, br, bg, bb) \
     printf("\x1b[38;2;%d;%d;%d;48;2;%d;%d;%dm", r, g, b, br, bg, bb)
 
+#define color256_set(code)\
+    printf("\x1b[38;5;%d", code)
+
+#define color256B_set(code)\
+    printf("\x1b[48;5;%d", code)
 
 #endif
