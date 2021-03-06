@@ -2,7 +2,7 @@
 #define ZAKAROUF_CCC_DEFINITION
 /*----------------------------*/
 
-#define ZAKAROUF_CCC_VERSION "0.2.0"
+#define ZAKAROUF_CCC_VERSION "0.2.3"
 #define ZAKAROUF_CCC_YEAR    "2021-2022"
 #define ZAKAROUF_CCC_HOSTPAGE "github.com/zakarouf/colorcodeconverter"
 
@@ -40,6 +40,8 @@
   "  -C [Value],      Copy Color Value To self\n"\
   "\n"\
   "  -F [FILENAME],   Read Commnads From A File\n"\
+  "  -A [FILENAME],   Append The Commands to File, If unspecified Last File is Used\n"\
+  "  -W [FILENAME],   Write The Commands to File, If unspecified Last File is Used\n"\
   "\n"\
   "Examples:\n"\
   \

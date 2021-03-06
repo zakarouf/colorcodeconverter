@@ -47,6 +47,8 @@ typedef struct colALLEncompass
     int size;
 }CCC_Color_t;
 
+#define WRITE_FILENAME_SIZE 64
+char WRITE_FILENAME[WRITE_FILENAME_SIZE] = "tmp_colortxt";
 
 //______CCC_COMMANDS_START_______//
 typedef float(*ccc_command_t)(float);
@@ -545,7 +547,9 @@ static void ccc_Manupilation(char *arg[], int at, int count, colrgb_t *rgb, colh
             if (arg[at + 1] == NULL)
                 return;
 
-            char *token = strtok(arg[at+1], ",");
+            char *tmpstff = malloc(64);
+            sprintf(tmpstff, "%s", arg[at+1]);
+            char *token = strtok(tmpstff, ",");
     
             /* Token types (char = actual variable it is representing)
                 i = it
@@ -629,9 +633,11 @@ static void ccc_Manupilation(char *arg[], int at, int count, colrgb_t *rgb, colh
                 token = strtok(NULL, ",");
     
             }
-        }
 
+            free(tmpstff);
+        }
     }
+
 
     colrgb_t tmpRGB = *rgb;
     colhsv_t tmpHSV = *hsv;
@@ -701,6 +707,20 @@ static char * ccc_ReadFromFile(char *file, int * string_size)
     *string_size = fsize;
     return string;
 }
+static void ccc_WriteToFile(char *fname, char md[], char pattern[],char **ls, int x, int y)
+{
+    FILE *f = fopen(fname, md);
+    if (f == NULL)
+        return;
+
+    for (int i = 0; i < y; ++i)
+    {
+        fprintf(f, pattern, ls[i]);
+    }
+    fclose(f);
+
+}
+
 
 // Break String into List of String (Into Tokens)
 static int ccc_BreakStringInto2DString_ASTOKENS (char ** buffer2D ,int buffXsize, int buffYsize, char *buffer, char *token_breaker)
@@ -801,6 +821,7 @@ static void ccc_RunFile(char * file, CCC_Color_t color)
 }
 
 // Main Command Phrasing
+
 static int ccc_commandPhrasing(char *arg[], int count, CCC_Color_t color)
 {
     // Create Temperory for Hard Reset.
@@ -916,6 +937,27 @@ static int ccc_commandPhrasing(char *arg[], int count, CCC_Color_t color)
                         ccc_RunFile(arg[i+1], color);
                     }
                     break;
+                case 'A':
+                    if (arg[i+1] != NULL)
+                    {
+                        snprintf(WRITE_FILENAME, WRITE_FILENAME_SIZE ,"%s", arg[i+1]);
+                        ccc_WriteToFile(WRITE_FILENAME, "a", "%s \n" , &arg[1], 0, count-3);
+                        printf("%s\n", arg[5]);
+                    } else {
+                        ccc_WriteToFile(WRITE_FILENAME, "a", "%s \n" , &arg[1], 0, count-3);
+                    }
+                    break;
+                case 'W':
+                    if (arg[i+1] != NULL)
+                    {
+                        snprintf(WRITE_FILENAME, WRITE_FILENAME_SIZE ,"%s", arg[i+1]);
+                        ccc_WriteToFile(WRITE_FILENAME, "w", "%s \n" , &arg[1], 0, count-3);
+                        printf("%s\n", arg[5]);
+                    } else {
+                        ccc_WriteToFile(WRITE_FILENAME, "w", "%s \n" , &arg[1], 0, count-3);
+                    }
+                    break;
+                // Copy Color
                 case 'C':
                     if (arg[i+1] != NULL)
                     {
@@ -962,18 +1004,23 @@ static void ccc_interactive_mode (CCC_Color_t color)
 
     while (!quit)
     {
-        color_set(255, 0, 0); printf("%d", At);
-        color_set(0, 255, 0); printf(">");
-        color_set(0, 0, 255); printf("> ");
+
+        color256_set(1); printf("%d", At);
+        color256_set(4); printf(">");
+        color256_set(3); printf("> ");
         color_reset();
+        color256_set(15);
         
         // Read From User, `%[^\n]%*c` for Taking in Space-seperated Tokens
         scanf("%[^\n]%*c", buffer);
         
         // Check if User typed `\q` to quit
-        if (buffer[0] == '\\' && buffer[1] == 'q')
+        if (buffer[0] == '\\')
         {
-            quit = 1;
+            if (buffer[1] == 'q')
+            {
+                quit = 1;
+            }   
         }
 
         // Read from user-input buffer, breaks into token convert's in Array of String. Returns nos. of Token read.
@@ -992,8 +1039,8 @@ CCC_Color_t color_init_empty(int size)
 {
     return (CCC_Color_t) {
         .size = size,
-        .rgb = malloc(sizeof(colrgb_t) * size),
-        .hsv = malloc(sizeof(colhsv_t) * size)
+        .rgb = calloc(size, sizeof(colrgb_t)),
+        .hsv = calloc(size, sizeof(colhsv_t))
     };
 }
 
