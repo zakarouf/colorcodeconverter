@@ -137,7 +137,7 @@ def argp(arg):
             if i[1:] == "-clean" or i[1:] == 'c':
                 cleanEnabled= 1
             elif i[1:] == "-build" or i[1:] == 'b':
-                source = arg[count+1]
+                gSourceCode = arg[count+1]
             elif i[1:] == "-testdisable" or i[1:] == 't':
                 testEnabled = 0
             elif i[1:] == "-testCommands" or i[1:] == 'm':
