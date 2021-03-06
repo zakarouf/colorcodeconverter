@@ -42,10 +42,8 @@ def compile(cfiles):
 
     cf = cfiles.split(" ")
 
-    run_command = [ CC ] + CFLAGS + LDFLAGS
+    run_command = [ CC ] + CFLAGS + LDFLAGS + cf
 
-    for i in cf:
-        run_command.append(i)
     run_command.append('-o')
     run_command.append(OUTEXE)
     
@@ -136,12 +134,12 @@ def argp(arg):
         if i[0] == '-':
             if i[1:] == "-clean" or i[1:] == 'c':
                 cleanEnabled= 1
-            elif i[1:] == "-build" or i[1:] == 'b':
+            elif i[1:] == "-source" or i[1:] == 's':
                 gSourceCode = arg[count+1]
             elif i[1:] == "-testdisable" or i[1:] == 't':
                 testEnabled = 0
             elif i[1:] == "-testCommands" or i[1:] == 'm':
-                testCommands = arg[count+1::]
+                gTestCommands = arg[count+1::]
                 main(gSourceCode, cleanEnabled, gTestCommands)
                 return
             else:
